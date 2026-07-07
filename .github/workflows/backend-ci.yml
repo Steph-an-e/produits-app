@@ -9,19 +9,18 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
-        image: postgres:16
+      mysql:
+        image: mysql:8.0
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: spring_db_test
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: spring_db
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     steps:
       - name: Récupérer le code
@@ -35,4 +34,11 @@ jobs:
           cache: maven
 
       - name: Compiler et tester
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/spring_db
+          DB_USER: root
+          DB_PASSWORD: root
         run: mvn -B verify
+
+      - name: Construire l'image Docker
+        run: docker build -t produits-app:${{ github.sha }} .
